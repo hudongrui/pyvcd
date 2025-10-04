@@ -401,21 +401,42 @@ class _TokenizerState:
         return bytes(identifier).decode("ascii")
 
     def take_simple_identifier(self) -> List[int]:
+        """
+        Supports sytanx for bit-array register, such as:
+
+        $var reg 178 /Y mem_array[0] [177:0] $end
+
+        In above expression, mem_array[0] is saved as VAR
+        """
         identifier = [self.buf[self.pos]]
         c = self.advance()
+        bracket_count = 0
 
-        while (
-            48 <= c <= 57  # '0' - '9'
-            or 65 <= c <= 90  # 'A' - 'Z'
-            or 97 <= c <= 122  # 'a' - 'z'
-            or c == 95  # '_'
-            or c == 36  # '$'
-            or c == 46  # '.' not in spec, but seen in the wild
-            or c == 40  # '(' - produced by cva6 core
-            or c == 41  # ')' - produced by cva6 core
-        ):
-            identifier.append(c)
-            c = self.advance(raise_on_eof=False)
+        while True:
+            # Check if current character is part of a valid identifier
+            if (
+                48 <= c <= 57  # '0' - '9'
+                or 65 <= c <= 90  # 'A' - 'Z'
+                or 97 <= c <= 122  # 'a' - 'z'
+                or c == 95  # '_'
+                or c == 36  # '$'
+                or c == 46  # '.'
+                or c == 40  # '('
+                or c == 41  # ')'
+            ):
+                identifier.append(c)
+                c = self.advance(raise_on_eof=False)
+            elif c == 91:  # '[' - start of array index
+                # Track bracket count to ensure balanced brackets
+                bracket_count += 1
+                identifier.append(c)
+                c = self.advance(raise_on_eof=False)
+            elif c == 93 and bracket_count > 0:  # ']' - end of array index (only if parsed open bracket)
+                bracket_count -= 1
+                identifier.append(c)
+                c = self.advance(raise_on_eof=False)
+            else:
+                break
 
         return identifier
 
