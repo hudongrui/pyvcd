@@ -4,6 +4,8 @@ PyVCD
 The PyVCD package writes Value Change Dump (VCD) files as specified in
 IEEE 1364-2005.
 
+2025/10/05: Supports parsing bit-array reg declaration, instead of throwing ParserError.
+
 Read the `documentation <http://pyvcd.readthedocs.io/en/latest/>`_.
 
 Visit `PyVCD on GitHub <https://github.com/westerndigitalcorporation/pyvcd>`_.
